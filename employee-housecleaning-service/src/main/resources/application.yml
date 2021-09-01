@@ -1,0 +1,4 @@
+server:
+  port: 8181
+typeServiceHost: http://localhost:8282
+typeServiceFindByType: ${typeServiceHost}/typeService/findByType?type=
