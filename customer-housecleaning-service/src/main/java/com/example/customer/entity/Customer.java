@@ -7,9 +7,13 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.Transient;
+import javax.transaction.TransactionScoped;
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
+
+import com.example.customer.model.BookService;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -74,5 +78,8 @@ public class Customer {
 	
 	@Transient
 	private List<BookService> listBookService;
+	
+	@Transient
+	private BookService bookServices;
 	
 }

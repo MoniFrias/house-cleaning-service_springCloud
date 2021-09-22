@@ -6,12 +6,12 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
-import org.springframework.web.reactive.function.client.WebClient;
-import com.example.customer.entity.BookService;
+
+import com.example.customer.client.BookServiceClient;
 import com.example.customer.entity.Customer;
 import com.example.customer.entity.Payment;
 import com.example.customer.entity.Response;
@@ -19,8 +19,6 @@ import com.example.customer.entity.ValidationException;
 import com.example.customer.repository.RepositoryCustomers;
 import com.example.customer.repository.RepositoryPayment;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 @Service
 public class Services {
@@ -28,12 +26,9 @@ public class Services {
 	@Autowired
 	RepositoryCustomers repository;
 	@Autowired
-	RepositoryPayment repositoryPayment;
+	RepositoryPayment repositoryPayment;	
 	@Autowired
-	WebClient webClient;
-	@Value("${bookServiceFindByIdCustomer}")
-	private String bookServiceFindByIdCustomer;
-
+	BookServiceClient bookServiceClient;
 
 	private Pattern pattern, patternPhone, patternCodeP;
 	private Matcher matcher, matcherPhone, matcherCodeP;
@@ -47,6 +42,7 @@ public class Services {
 		if (matcherPhoneNumber && !validResult.hasErrors()) {
 			if (customerFound == null) {
 				response.setData(repository.save(customer));
+				response.setData(customer);
 				return response;
 			} else {
 				throw new ValidationException("Already there a customer with that Email");
@@ -163,8 +159,13 @@ public class Services {
 		if (id != null && id > 0) {
 			if (customer != null) {
 				Customer customerNew = setPaymentsMethods(customer);
-				customerNew.setListBookService(listBookServiceFound(customerNew.getId()));
-				response.setData(customerNew);
+				List<Object> customerFound = null;
+				try{
+					customerFound = (List<Object>) bookServiceClient.findByCustomerId(customerNew.getId()).getBody().getData();		
+				}catch (Exception e) {
+					throw new ValidationException("No Book services for that Customer");
+				}
+				response.setData(customerFound);
 				return response;
 			} else {
 				throw new ValidationException("No customers with that ID");
@@ -376,25 +377,7 @@ public class Services {
 		return customerFound;
 	}
 	
-	private List<BookService> listBookServiceFound(Long id) throws JsonProcessingException{
-		Response objectResponse = null;
-		try {
-			objectResponse = webClient.get()
-					.uri(bookServiceFindByIdCustomer+id)
-					.retrieve()
-					.bodyToMono(Response.class)
-					.block();
-		}catch (Exception e) {
-			throw new ValidationException("No Book services for that Customer");
-		}
-		
-		Object objectBookService = objectResponse.getData();
-		ObjectMapper objectMapper = new ObjectMapper();
-		objectMapper.findAndRegisterModules();
-		String stringResponse = objectMapper.writeValueAsString(objectBookService);
-		List<BookService> responseBookService = objectMapper.readValue(stringResponse, new TypeReference<List<BookService>>() {});
-		return responseBookService;
-	}
+
 
 	
 
