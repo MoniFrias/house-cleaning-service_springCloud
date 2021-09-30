@@ -15,11 +15,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import com.example.employee.client.TypeServiceClient;
 import com.example.employee.entity.Appointment;
 import com.example.employee.entity.Employee;
 import com.example.employee.entity.Response;
-import com.example.employee.entity.TypeService;
 import com.example.employee.entity.ValidationException;
+import com.example.employee.model.TypeService;
 import com.example.employee.repository.RepositoryAppointment;
 import com.example.employee.repository.RepositoryEmployee;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -33,9 +35,14 @@ public class Services {
 	@Autowired
 	RepositoryAppointment repositoryAppointment;
 	@Autowired
+	TypeServiceClient typeServiceClient;
+	
+	@Autowired
 	WebClient webClient;
 	@Value("${typeServiceFindByType}")	
 	private String typeServiceFindByType;
+
+	
 	Pattern pattern, patternPhone, patternNss, patternIdCustomer, patternIdEmployee;
 	Matcher matcher, matcherPhone, matcherNss, matcherIdCustomer, matcherIdEmployee;
 		
@@ -63,11 +70,12 @@ public class Services {
 		LocalTime AppointmentStarTime = appointment.getStarTime();
 		
 		List<Employee> listEmployee = repository.findEmployeeByPostalCode(appointment.getPostalCode());
-		if (appointment.getId() == null && appointment.getBookNumber() == null) {
+ 		if (appointment.getId() == null && appointment.getBookNumber() == null) {
 			if (validationAppointment && !validResultApp.hasErrors()) {
 				if (!listEmployee.isEmpty()) {
-					TypeService typeServiceFound = typeServiceFindByType(appointment.getTypeService());			
-					LocalTime appoitmentEndTime = appointment.getStarTime().plusHours(typeServiceFound.getTimeSuggested());
+					TypeService typeFound = typeServiceFindByType(appointment.getTypeService());
+					LocalTime appoitmentEndTime = appointment.getStarTime().plusHours(typeFound.getTimeSuggested()+1L);
+					
 					boolean validateDateTime = validateLocalDateTime(dateBook, AppointmentStarTime, appoitmentEndTime);
 					if (validateDateTime) {
 						Optional<Employee> employeeFirst = validateAvailable(listEmployee, dateBook, AppointmentStarTime, appoitmentEndTime);
@@ -259,7 +267,9 @@ public class Services {
 		List<Employee> listEmployee = repository.findEmployeeByPostalCode(appointment.getPostalCode());
 		if (validationAppointment && !validResultApp.hasErrors()) {
 			if (!listEmployee.isEmpty() && appointmentFound != null && !appointmentFound.getStatusService().equals("done")) {
-				TypeService typeServiceFound = typeServiceFindByType(appointment.getTypeService());			
+				//TypeService typeServiceFound = typeServiceFindByType(appointment.getTypeService());			
+				TypeService typeServiceFound = (TypeService) typeServiceClient.findByType("").getBody().getData();
+				
 				LocalTime appoitmentEndTime = appointment.getStarTime().plusHours(typeServiceFound.getTimeSuggested());
 				boolean validateDateTime = validateLocalDateTime(dateBook, AppointmentStarTime, appoitmentEndTime);
 				if (validateDateTime) {
@@ -400,7 +410,7 @@ public class Services {
 	private TypeService typeServiceFindByType(String type) throws JsonProcessingException {
 		Response objectResponse = null;
 		try {
-			objectResponse = webClient.get().uri(typeServiceFindByType+type).retrieve().bodyToMono(Response.class).block();
+			objectResponse = webClient.get().uri(typeServiceFindByType+"/findByType?type="+type).retrieve().bodyToMono(Response.class).block();
 		}catch (Exception e) {
 			throw new ValidationException("There aren't type services with that name");
 		}				

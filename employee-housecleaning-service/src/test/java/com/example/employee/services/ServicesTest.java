@@ -1,6 +1,7 @@
 package com.example.employee.services;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.time.LocalDate;
@@ -26,8 +27,8 @@ import org.springframework.web.reactive.function.client.WebClient.ResponseSpec;
 import com.example.employee.entity.Appointment;
 import com.example.employee.entity.Employee;
 import com.example.employee.entity.Response;
-import com.example.employee.entity.TypeService;
 import com.example.employee.entity.ValidationException;
+import com.example.employee.model.TypeService;
 import com.example.employee.repository.RepositoryAppointment;
 import com.example.employee.repository.RepositoryEmployee;
 import com.fasterxml.jackson.core.JsonProcessingException;

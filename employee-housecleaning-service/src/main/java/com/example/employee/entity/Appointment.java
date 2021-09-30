@@ -7,8 +7,11 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import javax.persistence.Transient;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
+
+import com.example.employee.model.TypeService;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -59,5 +62,6 @@ public class Appointment {
 	
 	@Column(name = "statusService")
 	private String statusService;
+	
 
 }
