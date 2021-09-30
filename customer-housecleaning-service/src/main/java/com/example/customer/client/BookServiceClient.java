@@ -13,5 +13,7 @@ public interface BookServiceClient {
 	@GetMapping(value = "/findByCustomerId", params = {"id!="})
 	public ResponseEntity<Response> findByCustomerId(@RequestParam(name = "id") Long id);
 
+	@GetMapping(path = "/findByBookNumber")
+	public ResponseEntity<Response> findByBookNumber(@RequestParam(name = "number") Long number);
 }
 

@@ -2,11 +2,6 @@ package com.example.customer.model;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
-
-import javax.persistence.Column;
-import javax.validation.constraints.NotNull;
-import javax.validation.constraints.Pattern;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

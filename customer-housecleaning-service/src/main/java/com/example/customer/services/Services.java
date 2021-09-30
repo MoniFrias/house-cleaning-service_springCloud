@@ -6,11 +6,9 @@ import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.validation.BindingResult;
-
 import com.example.customer.client.BookServiceClient;
 import com.example.customer.entity.Customer;
 import com.example.customer.entity.Payment;
@@ -136,6 +134,10 @@ public class Services {
 		}else {
 			throw new ValidationException("Id can't be null or zero");
 		}
+		
+//		Object x = bookServiceClient.findByBookNumber(id).getBody().getData();
+//		response.setData(x);
+//		return response;
 	}
 	
 	public Response findPaymentsById(Long id) {

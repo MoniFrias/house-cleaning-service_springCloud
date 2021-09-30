@@ -78,8 +78,6 @@ public class Customer {
 	
 	@Transient
 	private List<BookService> listBookService;
-	
-	@Transient
-	private BookService bookServices;
+
 	
 }
