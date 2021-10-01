@@ -86,6 +86,7 @@ public class Services {
 							appointment.setBookNumber(bookNumber);
 							appointment.setIdEmployee(employee.getId());
 							appointment.setEndTime(appoitmentEndTime);
+							appointment.setStatusPay("In process");
 							appointment.setStatusService("Pendient");
 							response.setData(repositoryAppointment.save(appointment));
 							return response;
@@ -267,8 +268,8 @@ public class Services {
 		List<Employee> listEmployee = repository.findEmployeeByPostalCode(appointment.getPostalCode());
 		if (validationAppointment && !validResultApp.hasErrors()) {
 			if (!listEmployee.isEmpty() && appointmentFound != null && !appointmentFound.getStatusService().equals("done")) {
-				//TypeService typeServiceFound = typeServiceFindByType(appointment.getTypeService());			
-				TypeService typeServiceFound = (TypeService) typeServiceClient.findByType("").getBody().getData();
+				TypeService typeServiceFound = typeServiceFindByType(appointment.getTypeService());			
+				
 				
 				LocalTime appoitmentEndTime = appointment.getStarTime().plusHours(typeServiceFound.getTimeSuggested());
 				boolean validateDateTime = validateLocalDateTime(dateBook, AppointmentStarTime, appoitmentEndTime);
@@ -304,7 +305,7 @@ public class Services {
 	public Response updateStatusPayment(Long bookService, String status) {
 		Response response = new Response();
 		Appointment appointmentFound = repositoryAppointment.findAppointmentByBookNumber(bookService);
-		if (appointmentFound != null && appointmentFound.getStatusPay() != "Paid") {
+		if (appointmentFound != null && !appointmentFound.getStatusPay().equals("Paid")) {
 			appointmentFound.setStatusPay(status);
 			response.setData(repositoryAppointment.save(appointmentFound));
 			return response;
@@ -313,15 +314,15 @@ public class Services {
 		}
 	}
 	
-	public Response updateStatusAppointment(Long bookService, String statusAppoin) {
+	public Response updateStatusAppointment(Long bookService, String status) {
 		Response response = new Response();
 		Appointment appointmentFound = repositoryAppointment.findAppointmentByBookNumber(bookService);
-		if (appointmentFound != null && appointmentFound.getStatusPay() == "Paid") {
-			appointmentFound.setStatusService(statusAppoin);
+		if (appointmentFound != null && appointmentFound.getStatusPay().equals("Paid") && !appointmentFound.getStatusService().equals("Done")) {
+			appointmentFound.setStatusService(status);
 			response.setData(repositoryAppointment.save(appointmentFound));
 			return response;
 		}else {
-			throw new ValidationException("No Appointment with that bookService");
+			throw new ValidationException("No Appointment with that bookService, it isn't paid yet or is already done");
 		}
 	}
 
