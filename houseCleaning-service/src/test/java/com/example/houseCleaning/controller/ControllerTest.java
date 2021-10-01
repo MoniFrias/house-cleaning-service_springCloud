@@ -45,7 +45,7 @@ class ControllerTest {
 	}
 	
 	@Test
-	void createAccountCustomerTest() {
+	void createAccountCustomerTest() throws JsonProcessingException {
 		assertEquals(HttpStatus.OK, controller.createAccountCustomer(new Customer()).getStatusCode());
 	}
 	

@@ -19,6 +19,8 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import com.example.houseCleaning.client.CustomerClient;
+import com.example.houseCleaning.client.EmployeeClient;
+import com.example.houseCleaning.client.TypeServiceClient;
 import com.example.houseCleaning.entity.BookService;
 import com.example.houseCleaning.entity.Response;
 import com.example.houseCleaning.entity.ValidationException;
@@ -45,9 +47,11 @@ public class Services {
 	RepositoryBook repository;
 	@Autowired
 	CustomerClient customerClient;
+	@Autowired
+	EmployeeClient employeeClient;
+	@Autowired
+	TypeServiceClient typeServiceClient;
 
-//	@Value("${customerSave}")
-//	private String customerSave;
 	@Value("${customerFindById}")
 	private String customerFindById;	
 	@Value("${customerFindInfoById}")
@@ -56,24 +60,14 @@ public class Services {
 	private String customerFindPaymentsById;
 	@Value("${customerFindByEmail}")
 	private String customerFindByEmail;
-	@Value("${customerUpdateCountService}")
-	private String customerUpdateCountService;
-	@Value("${employeeSave}")
-	private String employeeSave;
 	@Value("${employeeFindByPostalCode}")
 	private String employeeFindByPostalCode;
-	@Value("${employeeSaveAppointment}")
-	private String employeeSaveAppointment;
-	@Value("${employeeUpdateAppointment}")
-	private String employeeUpdateAppointment;
-	@Value("${employeeUpdatePaymentAppointment}")
-	private String employeeUpdatePaymentAppointment;
 	@Value("${employeeFindByBookNumber}")
 	private String employeeFindByBookNumber;
 	@Value("${typeServiceFindByType}")
 	private String typeServiceFindByType;
-	@Value("${typeServiceSave}")
-	private String typeServiceSave;
+//	@Value("${typeServiceSave}")
+//	private String typeServiceSave;
 
 	private Pattern patternCodeP, patternIdCustomer, patternCard, patternBookNumber;
 	private Matcher matcherCodeP, matcherIdCustomer, matcherCard, matcherBookNumber;
@@ -96,25 +90,25 @@ public class Services {
 
 	public Response createAccountEmployee(Employee employee) {
 		Response response = new Response();
-		Employee employeeFound = null;
+		Object employeeSave = null;
 		try {
-			employeeFound = saveEmployee(employee);
-		} catch (JsonProcessingException e) {
+			employeeSave = employeeClient.save(employee).getBody().getData();
+		} catch (Exception e) {
 			log.error("error {}", e);
-			throw new ValidationException(e.getMessage());
+			throw new ValidationException("Some data is wrong or already there a employee with that Email");
 		}
-		response.setData(employeeFound);
+		response.setData(employeeSave);
 		return response;
 	}
 
 	public Response createTypeService(TypeService typeService) {
 		Response response = new Response();
-		TypeService typeServiceSave = null;
+		Object typeServiceSave = null;
 		try {
-			typeServiceSave = saveTypeService(typeService);
-		} catch (JsonProcessingException e) {
+			typeServiceSave = typeServiceClient.save(typeService).getBody().getData();
+		} catch (Exception e) {
 			log.error("error {}", e);
-			throw new ValidationException(e.getMessage());
+			throw new ValidationException("Some data is wrong or already there a Type service with that name");
 		}
 		response.setData(typeServiceSave);
 		return response;
@@ -159,30 +153,31 @@ public class Services {
 				if (count == 0) {					
 					if (employeeValidation.isPresent()) {
 						Employee employee = employeeValidation.get();
-						//Customer customerStatus = customerFindById(bookService.getIdCustomer());
-						Object customerFound = null;
-						try {
-							customerFound = customerClient.findById(bookService.getIdCustomer()).getBody().getData();
-						}catch (Exception e) {
-							throw new ValidationException(e.getMessage());
-						}
+						Customer customerStatus = customerFindById(bookService.getIdCustomer());
+//						Object customerFound = null;
+//						try {
+//							customerFound = customerClient.findById(bookService.getIdCustomer()).getBody().getData();
+//						}catch (Exception e) {
+//							throw new ValidationException(e.getMessage());
+//						}
+//						
+//						ObjectMapper objectMapper = new ObjectMapper();
+//						String stringResponse = objectMapper.writeValueAsString(customerFound);
+//						Customer responseCustomer = objectMapper.readValue(stringResponse, Customer.class);
 						
-						
-						ObjectMapper objectMapper = new ObjectMapper();
-						String stringResponse = objectMapper.writeValueAsString(customerFound);
-						Customer responseCustomer = objectMapper.readValue(stringResponse, Customer.class);
-						
-						if (responseCustomer.getCountService() == 0) {
+						if (customerStatus.getCountService() == 0) {
 							double descount = typeServiceFound.getCost() * (0.2);
 							Long costTotal = typeServiceFound.getCost() - (new Double(descount)).longValue();
-							customerUpdateCountService(bookService.getIdCustomer(), 1L);
+							//customerUpdateCountService(bookService.getIdCustomer(), 1L);
+							customerClient.updateCountService(bookService.getIdCustomer(), 1L);
 							bookService.setCost(costTotal);
 							BookService bookServiceNew = setValuesBookService(bookService, employee, appoitmentEndTime);
 							response.setData(repository.save(bookServiceNew));
 							return response;
 						} else {
-							Long countNew = responseCustomer.getCountService() + 1L;
-							customerUpdateCountService(bookService.getIdCustomer(), countNew);
+							Long countNew = customerStatus.getCountService() + 1L;
+							//customerUpdateCountService(bookService.getIdCustomer(), countNew);
+							customerClient.updateCountService(bookService.getIdCustomer(), countNew);
 							bookService.setCost(typeServiceFound.getCost());
 							BookService bookServiceNew = setValuesBookService(bookService, employee, appoitmentEndTime);
 							response.setData(repository.save(bookServiceNew));
@@ -219,8 +214,7 @@ public class Services {
 				if (findPayment > 0) {
 					bookServiceFound.setStatusPay("Paid");
 					response.setData(repository.save(bookServiceFound));					
-					//Appointment appointmentFound = appointmentFindByBookNumber(bookServiceFound.getBookNumber());	
-				    updatePaymentAppointment(bookService,"Paid");
+				    employeeClient.updateStatusPayment(bookService, "Paid");
 					return response;
 				}else {
 					throw new ValidationException("Payment method doesn't saved");
@@ -242,6 +236,7 @@ public class Services {
 		} else {
 			throw new ValidationException("No bookService");
 		}
+
 	}
 
 	public Response findByCustomerId(Long id) {
@@ -379,7 +374,12 @@ public class Services {
 			if (bookSeviceFound != null && bookSeviceFound.getStatusPay() == "Paid" && !bookSeviceFound.getStatusService().equals("Done")) {
 				bookSeviceFound.setStatusService(status);
 				response.setData(repository.save(bookSeviceFound));					
-				updateStatusServiceAppointment(bookService, status);
+				try {
+					employeeClient.updateStatusAppointment(bookService, status);
+				} catch (Exception e) {
+					log.error("error {}", e);
+					throw new ValidationException("Something is wrong to update status Services");
+				}
 				return response;
 			} else {
 				throw new ValidationException("No bookService for that bookNumber or isn't paid yet");
@@ -418,7 +418,8 @@ public class Services {
 		appoitmentValues.setEndTime(appoitmentEndTime);
 		appoitmentValues.setBookNumber(ts.getTime());
 		appoitmentValues.setStatusPay("In process");
-		employeeSaveAppointment(appoitmentValues);
+		appoitmentValues.setStatusService("Pendient");
+		employeeClient.saveAppointment(appoitmentValues);
 		return bookService;
 	}
 
@@ -435,7 +436,7 @@ public class Services {
 		Appointment appointmentFound = appointmentFindByBookNumber(bookServiceFound.getBookNumber());		
 		appointmentFound = setValuesAppointment(appointmentFound, bookServiceFound);
 		appointmentFound.setEndTime(appoitmentEndTime);
-		employeeUpdateAppointment(appointmentFound);
+		employeeClient.updateAppointment(appointmentFound);
 		return bookServiceFound;
 	}
 
@@ -503,55 +504,21 @@ public class Services {
 		}
 	}
 
-//	private Customer saveCustomer(Customer customer) throws JsonMappingException, JsonProcessingException {
+//	private TypeService saveTypeService(TypeService typeService) throws JsonMappingException, JsonProcessingException {
 //		MediaType contentType = null;
 //		Response objectResponse = null;
 //		try {
-//			objectResponse = webClient.post().uri(customerSave).contentType(contentType.APPLICATION_JSON)
-//					.body(BodyInserters.fromValue(customer)).retrieve().bodyToMono(Response.class).block();
+//			objectResponse = webClient.post().uri(typeServiceSave).contentType(contentType.APPLICATION_JSON)
+//					.body(BodyInserters.fromValue(typeService)).retrieve().bodyToMono(Response.class).block();
 //		} catch (Exception e) {
-//			throw new ValidationException("Some data is wrong or already there a customer with that Email");
+//			throw new ValidationException("Some data is wrong or already there a Type service with that name");
 //		}
-//
-//		Object objectCustomer = objectResponse.getData();
+//		Object objectTypeService = objectResponse.getData();
 //		ObjectMapper objectMapper = new ObjectMapper();
-//		String stringResponse = objectMapper.writeValueAsString(objectCustomer);
-//		Customer responseCustomer = objectMapper.readValue(stringResponse, Customer.class);
-//		return responseCustomer;
+//		String stringResponse = objectMapper.writeValueAsString(objectTypeService);
+//		TypeService responseTypeService = objectMapper.readValue(stringResponse, TypeService.class);
+//		return responseTypeService;
 //	}
-
-	private Employee saveEmployee(Employee employee) throws JsonMappingException, JsonProcessingException {
-		MediaType contentType = null;
-		Response objectResponse = null;
-		try {
-			objectResponse = webClient.post().uri(employeeSave).contentType(contentType.APPLICATION_JSON)
-					.body(BodyInserters.fromValue(employee)).retrieve().bodyToMono(Response.class).block();
-		} catch (Exception e) {
-			throw new ValidationException("Some data is wrong or already there a employee with that Email");
-		}
-
-		Object objectEmployee = objectResponse.getData();
-		ObjectMapper objectMapper = new ObjectMapper();
-		String stringResponse = objectMapper.writeValueAsString(objectEmployee);
-		Employee responseEmployee = objectMapper.readValue(stringResponse, Employee.class);
-		return responseEmployee;
-	}
-
-	private TypeService saveTypeService(TypeService typeService) throws JsonMappingException, JsonProcessingException {
-		MediaType contentType = null;
-		Response objectResponse = null;
-		try {
-			objectResponse = webClient.post().uri(typeServiceSave).contentType(contentType.APPLICATION_JSON)
-					.body(BodyInserters.fromValue(typeService)).retrieve().bodyToMono(Response.class).block();
-		} catch (Exception e) {
-			throw new ValidationException("Some data is wrong or already there a Type service with that name");
-		}
-		Object objectTypeService = objectResponse.getData();
-		ObjectMapper objectMapper = new ObjectMapper();
-		String stringResponse = objectMapper.writeValueAsString(objectTypeService);
-		TypeService responseTypeService = objectMapper.readValue(stringResponse, TypeService.class);
-		return responseTypeService;
-	}
 
 	private Customer customerFindByEmail(String email) throws JsonProcessingException {
 		Response objectResponse = null;
@@ -648,52 +615,6 @@ public class Services {
 		String stringResponse = objectMapper.writeValueAsString(objectEmployee);
 		List<Employee> responseEmployee = objectMapper.readValue(stringResponse, new TypeReference<List<Employee>>() {});
 		return responseEmployee;
-	}
-
-	private void customerUpdateCountService(Long id, Long count) {
-		webClient.put()
-				.uri(customerUpdateCountService, uri -> uri.queryParam("id", id).queryParam("count", count).build())
-				.retrieve().bodyToMono(Response.class).block();
-	}
-
-	private void employeeSaveAppointment(Appointment appointment) {
-		MediaType contentType = null;
-		try {
-			webClient.post().uri(employeeSaveAppointment).contentType(contentType.APPLICATION_JSON)
-					.body(BodyInserters.fromValue(appointment)).retrieve().bodyToMono(Response.class).block();
-		} catch (Exception e) {
-			throw new ValidationException("Something is wrong");
-		}
-	}
-	
-	private void updatePaymentAppointment(Long bookService, String status) {
-		MediaType contentType = null;
-		try {
-			webClient.put().uri(employeeUpdatePaymentAppointment, uri -> uri.queryParam("bookService", bookService).queryParam("status", status).build())
-			.retrieve().bodyToMono(Response.class).block();
-		} catch (Exception e) {
-			throw new ValidationException("Something is wrong to update Payment");
-		}
-	}
-	
-	private void updateStatusServiceAppointment(Long bookService, String status) {
-		MediaType contentType = null;
-		try {
-			webClient.put().uri(employeeUpdatePaymentAppointment, uri -> uri.queryParam("bookService", bookService).queryParam("status", status).build())
-			.retrieve().bodyToMono(Response.class).block();
-		} catch (Exception e) {
-			throw new ValidationException("Something is wrong to update status Services");
-		}
-	}
-
-	private void employeeUpdateAppointment(Appointment appointment) {
-		MediaType contentType = null;
-		try {
-			webClient.put().uri(employeeUpdateAppointment).contentType(contentType.APPLICATION_JSON)
-					.body(BodyInserters.fromValue(appointment)).retrieve().bodyToMono(Response.class).block();
-		} catch (Exception e) {
-			throw new ValidationException("Something is wrong to update Appointment");
-		}
 	}
 
 	private Appointment appointmentFindByBookNumber(Long bookNumber)

@@ -22,7 +22,7 @@ public class Customer {
 	private Long outdoorNumber;
 	private Long phoneNumber;
 	private Long countService;
-//	private List<Payment> listPayment;
-//	private List<BookService> listBookService;
+	private List<Payment> listPayment;
+	private List<BookService> listBookService;
 
 }
