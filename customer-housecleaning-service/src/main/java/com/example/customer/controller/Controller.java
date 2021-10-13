@@ -20,10 +20,12 @@ import com.example.customer.entity.Payment;
 import com.example.customer.entity.Response;
 import com.example.customer.services.Services;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 
 
 @RestController
 @RequestMapping(path = "/customer")
+
 public class Controller {
 
 	@Autowired
@@ -65,6 +67,7 @@ public class Controller {
 		return new ResponseEntity<>(response,HttpStatus.FOUND);
 	}
 	
+	@HystrixCommand
 	@GetMapping(path = "/findBookServiceByIdCustomer")
 	public ResponseEntity<Response> findBookServiceByIdCustomer(@RequestParam(name = "id") Long id) throws JsonProcessingException{
 		Response response = services.findBookServiceByIdCustomer(id);

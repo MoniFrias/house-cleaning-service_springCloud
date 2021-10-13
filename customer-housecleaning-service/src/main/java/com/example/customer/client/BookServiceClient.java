@@ -6,14 +6,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import com.example.customer.entity.Response;
 
-@FeignClient(name = "bookService-service", url = "${bookServiceFindByIdCustomer}")
+
+@FeignClient(name = "bookService-service", url = "${bookServiceFindByIdCustomer}", fallback = BookServiceHystrixFallBackFactory.class)
 
 public interface BookServiceClient {
 	
 	@GetMapping(value = "/findByCustomerId", params = {"id!="})
 	public ResponseEntity<Response> findByCustomerId(@RequestParam(name = "id") Long id);
 
-	@GetMapping(path = "/findByBookNumber")
-	public ResponseEntity<Response> findByBookNumber(@RequestParam(name = "number") Long number);
 }
 

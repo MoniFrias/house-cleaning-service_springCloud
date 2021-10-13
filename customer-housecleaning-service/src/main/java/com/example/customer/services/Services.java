@@ -135,9 +135,7 @@ public class Services {
 			throw new ValidationException("Id can't be null or zero");
 		}
 		
-//		Object x = bookServiceClient.findByBookNumber(id).getBody().getData();
-//		response.setData(x);
-//		return response;
+
 	}
 	
 	public Response findPaymentsById(Long id) {
