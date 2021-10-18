@@ -46,7 +46,7 @@ public class WebSecurityConfiguration extends WebSecurityConfigurerAdapter{
 				 "/houseCleaning/findAll", "/houseCleaning/findByCustomerId", "/houseCleaning/findByBookNumber",
 				 "/houseCleaning//update/{number}", "/houseCleaning/deleteByBookNumber", "/houseCleaning/createTypeService",
 				 "/houseCleaning/findServicesPerMonth", "/houseCleaning/updateStatusService", "/houseCleaning/findCustomerInfoById",
-				 "/houseCleaning/findCustomerPaymentsById");
+				 "/houseCleaning/findCustomerPaymentsById", "/actuator/health");
 	}	
 
 }

@@ -25,7 +25,6 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 
 @RestController
 @RequestMapping(path = "/customer")
-
 public class Controller {
 
 	@Autowired

@@ -26,6 +26,7 @@ public interface CustomerClient {
 	@GetMapping(path = "/findById")
 	public ResponseEntity<Response> findById(@RequestParam(name = "id") Long id);
 	
-	
+	@GetMapping(path = "/findByEmail")
+	public ResponseEntity<Response> findByEmail(@RequestParam(name = "email") String email);
 
 }

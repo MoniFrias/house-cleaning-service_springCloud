@@ -58,16 +58,15 @@ public class Services {
 	private String customerFindInfoById;
 	@Value("${customerFindPaymentsById}")
 	private String customerFindPaymentsById;
-	@Value("${customerFindByEmail}")
-	private String customerFindByEmail;
+//	@Value("${customerFindByEmail}")
+//	private String customerFindByEmail;
 	@Value("${employeeFindByPostalCode}")
 	private String employeeFindByPostalCode;
 	@Value("${employeeFindByBookNumber}")
 	private String employeeFindByBookNumber;
 	@Value("${typeServiceFindByType}")
 	private String typeServiceFindByType;
-//	@Value("${typeServiceSave}")
-//	private String typeServiceSave;
+
 
 	private Pattern patternCodeP, patternIdCustomer, patternCard, patternBookNumber;
 	private Matcher matcherCodeP, matcherIdCustomer, matcherCard, matcherBookNumber;
@@ -116,9 +115,16 @@ public class Services {
 
 	public Response login(String email) throws JsonProcessingException {
 		Response response = new Response();
-		Customer customerFound = customerFindByEmail(email);
+//		Customer customerFound = customerFindByEmail(email);
+		Object customerFound = null;
+		try {
+			customerFound = customerClient.findByEmail(email).getBody().getData();
+			
+		}catch (Exception e) {
+			throw new ValidationException("No funciona Feign");
+		}
 		if (customerFound != null) {
-			response.setMessage("Welcome " + customerFound.getName());
+			//response.setMessage("Welcome " + customerFound.getName());
 			return response;
 		} else {
 			throw new ValidationException("No customers with that email");
@@ -154,16 +160,7 @@ public class Services {
 					if (employeeValidation.isPresent()) {
 						Employee employee = employeeValidation.get();
 						Customer customerStatus = customerFindById(bookService.getIdCustomer());
-//						Object customerFound = null;
-//						try {
-//							customerFound = customerClient.findById(bookService.getIdCustomer()).getBody().getData();
-//						}catch (Exception e) {
-//							throw new ValidationException(e.getMessage());
-//						}
-//						
-//						ObjectMapper objectMapper = new ObjectMapper();
-//						String stringResponse = objectMapper.writeValueAsString(customerFound);
-//						Customer responseCustomer = objectMapper.readValue(stringResponse, Customer.class);
+
 						
 						if (customerStatus.getCountService() == 0) {
 							double descount = typeServiceFound.getCost() * (0.2);
@@ -504,36 +501,20 @@ public class Services {
 		}
 	}
 
-//	private TypeService saveTypeService(TypeService typeService) throws JsonMappingException, JsonProcessingException {
-//		MediaType contentType = null;
+//	private Customer customerFindByEmail(String email) throws JsonProcessingException {
 //		Response objectResponse = null;
 //		try {
-//			objectResponse = webClient.post().uri(typeServiceSave).contentType(contentType.APPLICATION_JSON)
-//					.body(BodyInserters.fromValue(typeService)).retrieve().bodyToMono(Response.class).block();
+//			objectResponse = webClient.get().uri(customerFindByEmail + email).retrieve().bodyToMono(Response.class)
+//					.block();
 //		} catch (Exception e) {
-//			throw new ValidationException("Some data is wrong or already there a Type service with that name");
+//			throw new ValidationException("There isn't a customer with that Email");
 //		}
-//		Object objectTypeService = objectResponse.getData();
+//		Object objectCustomer = objectResponse.getData();
 //		ObjectMapper objectMapper = new ObjectMapper();
-//		String stringResponse = objectMapper.writeValueAsString(objectTypeService);
-//		TypeService responseTypeService = objectMapper.readValue(stringResponse, TypeService.class);
-//		return responseTypeService;
+//		String stringResponse = objectMapper.writeValueAsString(objectCustomer);
+//		Customer responseCustomer = objectMapper.readValue(stringResponse, Customer.class);
+//		return responseCustomer;
 //	}
-
-	private Customer customerFindByEmail(String email) throws JsonProcessingException {
-		Response objectResponse = null;
-		try {
-			objectResponse = webClient.get().uri(customerFindByEmail + email).retrieve().bodyToMono(Response.class)
-					.block();
-		} catch (Exception e) {
-			throw new ValidationException("There isn't a customer with that Email");
-		}
-		Object objectCustomer = objectResponse.getData();
-		ObjectMapper objectMapper = new ObjectMapper();
-		String stringResponse = objectMapper.writeValueAsString(objectCustomer);
-		Customer responseCustomer = objectMapper.readValue(stringResponse, Customer.class);
-		return responseCustomer;
-	}
 
 	private Customer customerFindById(Long id) throws JsonMappingException, JsonProcessingException {
 		Response objectResponse = null;
